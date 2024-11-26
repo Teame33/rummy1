@@ -6,8 +6,13 @@ import time
 import threading
 from flask_cors import CORS
 import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = os.environ.get('FLASK_SECRET_KEY', 'fallback_secret_key')
 CORS(app)
 
 # Store active games (in a real application, this should be in a database)
@@ -355,5 +360,5 @@ def check_winner():
     return jsonify({'success': False, 'error': 'Game not over'})
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5001))
-    app.run(host='0.0.0.0', port=port)
+    port = int(os.environ.get('PORT', 8080))
+    app.run(host='0.0.0.0', port=port, debug=True)
