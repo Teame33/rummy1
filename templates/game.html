@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rummy Game Room</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            padding: 20px;
+        }
+
+        .game-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .game-header {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .game-code {
+            font-weight: bold;
+            color: #1e3c72;
+        }
+
+        .turn-indicator {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+
+        .opponent-area, .player-area {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border-radius: 10px;
+            min-height: 150px;
+        }
+
+        .playing-area {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 10px;
+        }
+
+        .deck, .discard-pile {
+            width: 120px;
+            height: 180px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: transform 0.2s;
+            font-weight: bold;
+        }
+
+        .deck {
+            background: #1e3c72;
+            color: white;
+        }
+
+        .discard-pile {
+            background: white;
+            border: 2px dashed #1e3c72;
+            color: #1e3c72;
+        }
+
+        .deck:hover, .discard-pile:hover {
+            transform: translateY(-5px);
+        }
+
+        /* Card styling */
+        .card {
+            width: 120px;
+            height: 180px;
+            background: white;
+            border-radius: 10px;
+            border: 1px solid #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            margin: 5px;
+            cursor: grab;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: relative;
+            padding: 10px;
+            user-select: none;
+        }
+
+        .card.dragging {
+            opacity: 0.5;
+            cursor: grabbing;
+        }
+
+        .card:active {
+            cursor: grabbing;
+        }
+
+        .card-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #1e3c72;
+            position: absolute;
+            top: 10px;
+            left: 10px;
+        }
+
+        .card-value.bottom {
+            transform: rotate(180deg);
+            bottom: 10px;
+            right: 10px;
+            top: auto;
+            left: auto;
+        }
+
+        .card-suit {
+            font-size: 48px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .card-suit.red {
+            color: #e74c3c;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .card-suit.black {
+            color: #2c3e50;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+
+        /* Game areas styling */
+        #playerHand {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            padding: 20px;
+            min-height: 200px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            margin: 20px 0;
+        }
+
+        #discardPile {
+            width: 120px;
+            height: 180px;
+            border: 2px dashed #1e3c72;
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 20px auto;
+            background: rgba(255,255,255,0.05);
+        }
+
+        #deck {
+            width: 120px;
+            height: 180px;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 20px auto;
+            color: white;
+            font-weight: bold;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        #deck:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+        }
+
+        .game-area {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            margin: 20px 0;
+        }
+
+        #opponentHand {
+            text-align: center;
+            padding: 20px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            margin: 20px 0;
+        }
+
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: #1e3c72;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #1e3c72;
+            border: 2px solid #1e3c72;
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+        }
+
+        .waiting {
+            color: #666;
+            font-style: italic;
+            text-align: center;
+        }
+
+        .combinations-area {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .combination {
+            display: flex;
+            gap: 10px;
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(30, 60, 114, 0.1);
+            border-radius: 5px;
+        }
+
+        .declare-button {
+            padding: 8px 16px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .declare-button:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+
+        .declare-button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="game-header">
+            <div class="game-code">Game Code: <span id="gameCodeDisplay"></span></div>
+            <button id="sortHandButton" style="padding: 8px 16px; background: #1e3c72; color: white; border: none; border-radius: 20px; cursor: pointer; font-weight: 500;">Sort Hand</button>
+            <button id="declareButton" class="declare-button" disabled>Declare Combination</button>
+            <div class="turn-indicator" id="turnIndicator"></div>
+        </div>
+
+        <div class="opponent-area" id="opponentArea">
+            <div class="waiting" id="opponentStatus">Waiting for opponent to join...</div>
+        </div>
+
+        <div class="playing-area">
+            <div class="deck" id="deck">Draw Card</div>
+            <div class="discard-pile" id="discardPile">Discard Pile</div>
+        </div>
+
+        <div class="player-area">
+            <div id="playerHand"></div>
+            <div class="action-buttons">
+                <button class="btn-primary" id="drawButton" disabled>Draw</button>
+                <button class="btn-secondary" id="discardButton" disabled>Discard</button>
+            </div>
+        </div>
+
+        <div class="combinations-area" id="combinationsArea">
+            <h3>Declared Combinations</h3>
+            <div id="playerCombinations"></div>
+        </div>
+    </div>
+
+    <script>
+        let gameState = {
+            isMyTurn: false,
+            cards: [],
+            selectedCards: [],
+            selectedCard: null,
+            topDiscard: null,
+            mustDiscard: false,
+            opponentCardCount: 0,
+            jokerCard: null,
+            deckCount: 0,
+            sortedOrder: false,
+            declaredCombinations: [],
+            isCreator: false,
+            gameStarted: false,
+            creatorFirstDiscard: false
+        };
+
+        function createCardElement(card) {
+            const cardElement = document.createElement('div');
+            cardElement.className = 'card';
+            cardElement.setAttribute('data-card-id', card.id);
+            cardElement.draggable = true;
+
+            // Add drag and drop event listeners
+            cardElement.addEventListener('dragstart', (e) => {
+                e.target.classList.add('dragging');
+            });
+
+            cardElement.addEventListener('dragend', (e) => {
+                e.target.classList.remove('dragging');
+            });
+
+            // Create top value
+            const topValue = document.createElement('div');
+            topValue.className = 'card-value';
+            topValue.textContent = card.value;
+
+            // Create bottom value (rotated)
+            const bottomValue = document.createElement('div');
+            bottomValue.className = 'card-value bottom';
+            bottomValue.textContent = card.value;
+
+            // Create suit
+            const suit = document.createElement('div');
+            suit.className = `card-suit ${['♥', '♦'].includes(card.suit) ? 'red' : 'black'}`;
+            suit.textContent = card.suit;
+
+            cardElement.appendChild(topValue);
+            cardElement.appendChild(suit);
+            cardElement.appendChild(bottomValue);
+
+            return cardElement;
+        }
+
+        async function updateGameDisplay() {
+            const playerHand = document.getElementById('playerHand');
+            const discardPile = document.getElementById('discardPile');
+            const turnIndicator = document.getElementById('turnIndicator');
+            const drawButton = document.getElementById('drawButton');
+            const discardButton = document.getElementById('discardButton');
+            const opponentStatus = document.getElementById('opponentStatus');
+            const declareButton = document.getElementById('declareButton');
+
+            if (playerHand) {
+                playerHand.innerHTML = '';
+                gameState.cards.forEach(card => {
+                    playerHand.appendChild(createCardElement(card));
+                });
+            }
+
+            if (discardPile) {
+                if (gameState.topDiscard) {
+                    discardPile.innerHTML = '';
+                    discardPile.appendChild(createCardElement(gameState.topDiscard));
+                } else {
+                    discardPile.innerHTML = 'Discard Pile';
+                }
+            }
+
+            if (turnIndicator) {
+                if (!gameState.gameStarted) {
+                    turnIndicator.textContent = 'Waiting for opponent to join...';
+                    turnIndicator.style.backgroundColor = '#666';
+                } else if (gameState.isCreator && !gameState.creatorFirstDiscard) {
+                    turnIndicator.textContent = 'Your turn - You must discard one card to start the game';
+                    turnIndicator.style.backgroundColor = '#ff4444';
+                } else if (gameState.mustDiscard) {
+                    turnIndicator.textContent = 'Your turn - You must discard one card';
+                    turnIndicator.style.backgroundColor = '#ff4444';
+                } else if (gameState.isMyTurn) {
+                    turnIndicator.textContent = 'Your turn';
+                    turnIndicator.style.backgroundColor = '#4CAF50';
+                } else {
+                    turnIndicator.textContent = "Opponent's turn";
+                    turnIndicator.style.backgroundColor = '#666';
+                }
+            }
+
+            if (opponentStatus) {
+                if (gameState.gameStarted) {
+                    opponentStatus.textContent = `Opponent's cards: ${gameState.opponentCardCount}`;
+                } else {
+                    opponentStatus.textContent = 'Waiting for opponent to join...';
+                }
+            }
+
+            // Disable draw button for creator until first discard
+            if (drawButton) {
+                drawButton.disabled = !gameState.isMyTurn || gameState.mustDiscard || 
+                    (gameState.isCreator && !gameState.creatorFirstDiscard);
+            }
+
+            if (discardButton) {
+                discardButton.disabled = (!gameState.isMyTurn && !gameState.mustDiscard) || !gameState.selectedCard;
+            }
+
+            if (declareButton) {
+                declareButton.disabled = gameState.selectedCards.length < 3;
+            }
+        }
+
+        async function pollGameState() {
+            try {
+                const gameCode = window.location.pathname.split('/').pop();
+                const urlParams = new URLSearchParams(window.location.search);
+                const role = urlParams.get('role');
+                const response = await fetch(`/game-state/${gameCode}?player=${role}`);
+                const data = await response.json();
+                
+                if (data.error) {
+                    console.error('Game state error:', data.error);
+                    window.location.href = '/';
+                    return;
+                }
+                
+                gameState.isMyTurn = data.isMyTurn;
+                gameState.cards = data.cards;
+                gameState.isCreator = role === 'creator';
+                gameState.creatorFirstDiscard = data.creatorFirstDiscard;
+                if (gameState.sortedOrder) {  
+                    const suitOrder = {'♠': 1, '♣': 2, '♥': 3, '♦': 4};
+                    const valueOrder = {'A': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, 
+                                      '8': 8, '9': 9, '10': 10, 'J': 11, 'Q': 12, 'K': 13};
+                    
+                    gameState.cards.sort((a, b) => {
+                        if (suitOrder[a.suit] !== suitOrder[b.suit]) {
+                            return suitOrder[a.suit] - suitOrder[b.suit];
+                        }
+                        return valueOrder[a.value] - valueOrder[b.value];
+                    });
+                }
+                gameState.topDiscard = data.topDiscard;
+                gameState.mustDiscard = data.mustDiscard;
+                gameState.opponentCardCount = data.opponentCardCount;
+                gameState.gameStarted = data.gameStarted;
+                gameState.jokerCard = data.jokerCard;
+                gameState.deckCount = data.deckCount;
+                
+                updateGameDisplay();
+            } catch (error) {
+                console.error('Error polling game state:', error);
+            }
+        }
+
+        async function checkGameStatus() {
+            try {
+                const gameCode = window.location.pathname.split('/').pop();
+                const response = await fetch(`/check-game-status/${gameCode}`);
+                const data = await response.json();
+
+                if (!data.valid) {
+                    clearInterval(window.statusCheckInterval);
+                    clearInterval(window.gameStateInterval);
+                    alert(data.message);
+                    window.location.href = '/';
+                    return;
+                }
+
+                if (data.started && !window.gameStateInterval) {
+                    clearInterval(window.statusCheckInterval);
+                    await pollGameState();
+                    setupEventListeners();
+                    window.gameStateInterval = setInterval(pollGameState, 1000);
+                } else if (!data.started) {
+                    const turnIndicator = document.getElementById('turnIndicator');
+                    if (turnIndicator) {
+                        turnIndicator.textContent = `Waiting for opponent... (${data.timeLeft}s)`;
+                    }
+                    
+                    if (data.timeLeft <= 0) {
+                        clearInterval(window.statusCheckInterval);
+                        alert('Game has expired. No one joined within 60 seconds.');
+                        window.location.href = '/';
+                    }
+                }
+            } catch (error) {
+                console.error('Error checking game status:', error);
+            }
+        }
+
+        function setupEventListeners() {
+            const playerHand = document.getElementById('playerHand');
+            const drawButton = document.getElementById('drawButton');
+            const discardButton = document.getElementById('discardButton');
+            const deck = document.getElementById('deck');
+            const discardPile = document.getElementById('discardPile');
+            const sortHandButton = document.getElementById('sortHandButton');
+            const declareButton = document.getElementById('declareButton');
+
+            if (sortHandButton) {
+                sortHandButton.addEventListener('click', () => {
+                    gameState.sortedOrder = !gameState.sortedOrder;  
+                    if (gameState.sortedOrder) {
+                        const suitOrder = {'♠': 1, '♣': 2, '♥': 3, '♦': 4};
+                        const valueOrder = {'A': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, 
+                                          '8': 8, '9': 9, '10': 10, 'J': 11, 'Q': 12, 'K': 13};
+                        
+                        gameState.cards.sort((a, b) => {
+                            if (suitOrder[a.suit] !== suitOrder[b.suit]) {
+                                return suitOrder[a.suit] - suitOrder[b.suit];
+                            }
+                            return valueOrder[a.value] - valueOrder[b.value];
+                        });
+                        sortHandButton.style.background = '#2a5298';  
+                    } else {
+                        sortHandButton.style.background = '#1e3c72';  
+                    }
+                    updateGameDisplay();
+                });
+            }
+
+            if (playerHand) {
+                playerHand.addEventListener('click', (e) => {
+                    const cardElement = e.target.closest('.card');
+                    if (!cardElement) return;
+
+                    const cardId = cardElement.dataset.cardId;
+                    if (!cardId) return;
+
+                    if (e.ctrlKey || e.metaKey) {
+                        // Multiple selection mode
+                        cardElement.classList.toggle('selected');
+                        if (cardElement.classList.contains('selected')) {
+                            gameState.selectedCards.push(cardId);
+                        } else {
+                            gameState.selectedCards = gameState.selectedCards.filter(id => id !== cardId);
+                        }
+                        // Enable/disable declare button based on selection
+                        if (declareButton) {
+                            declareButton.disabled = gameState.selectedCards.length < 3;
+                        }
+                    } else {
+                        // Single selection mode for discard
+                        document.querySelectorAll('.card').forEach(card => {
+                            if (card !== cardElement) {
+                                card.classList.remove('selected');
+                            }
+                        });
+                        cardElement.classList.toggle('selected');
+                        gameState.selectedCard = cardElement.classList.contains('selected') ? cardId : null;
+                        
+                        if (discardButton) {
+                            discardButton.disabled = !gameState.isMyTurn && !gameState.mustDiscard;
+                        }
+                    }
+                });
+
+                // Add drag and drop event listeners to the player hand area
+                playerHand.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    const draggingCard = document.querySelector('.dragging');
+                    const afterElement = getDragAfterElement(playerHand, e.clientX);
+                    if (afterElement) {
+                        playerHand.insertBefore(draggingCard, afterElement);
+                    } else {
+                        playerHand.appendChild(draggingCard);
+                    }
+                });
+
+                // Helper function to determine where to place the dragged card
+                function getDragAfterElement(container, x) {
+                    const draggableElements = [...container.querySelectorAll('.card:not(.dragging)')];
+                    
+                    return draggableElements.reduce((closest, child) => {
+                        const box = child.getBoundingClientRect();
+                        const offset = x - box.left - box.width / 2;
+                        
+                        if (offset < 0 && offset > closest.offset) {
+                            return { offset: offset, element: child };
+                        } else {
+                            return closest;
+                        }
+                    }, { offset: Number.NEGATIVE_INFINITY }).element;
+                }
+            }
+
+            if (deck) {
+                deck.addEventListener('click', () => {
+                    if (gameState.isMyTurn && !gameState.mustDiscard) {
+                        drawCard();
+                    }
+                });
+            }
+
+            if (discardPile) {
+                discardPile.addEventListener('click', () => {
+                    if (gameState.isMyTurn && !gameState.mustDiscard && gameState.topDiscard) {
+                        drawFromDiscard();
+                    }
+                });
+            }
+
+            if (drawButton) {
+                drawButton.addEventListener('click', drawCard);
+            }
+
+            if (discardButton) {
+                discardButton.addEventListener('click', async () => {
+                    if (!gameState.isMyTurn && !gameState.mustDiscard) return;
+                    if (!gameState.selectedCard) return;
+
+                    try {
+                        await discardCard(gameState.selectedCard);
+                        gameState.selectedCard = null;
+                        updateGameDisplay();
+                    } catch (error) {
+                        console.error('Error discarding card:', error);
+                    }
+                });
+            }
+
+            if (declareButton) {
+                declareButton.addEventListener('click', async () => {
+                    if (gameState.selectedCards.length < 3) {
+                        alert('Select at least 3 cards to declare a combination');
+                        return;
+                    }
+
+                    const response = await fetch('/declare-combination', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            gameCode: window.location.pathname.split('/').pop(),
+                            isCreator: new URLSearchParams(window.location.search).get('role') === 'creator',
+                            cardIds: gameState.selectedCards
+                        })
+                    });
+
+                    const data = await response.json();
+                    if (data.success) {
+                        // Clear selections
+                        gameState.selectedCards = [];
+                        document.querySelectorAll('.card.selected').forEach(card => {
+                            card.classList.remove('selected');
+                        });
+                        declareButton.disabled = true;
+                        
+                        // Update display
+                        await pollGameState();
+                        
+                        // Check if player has won
+                        await checkWinner();
+                    } else {
+                        alert('Invalid combination! Remember:\n- Sequences: 3+ consecutive cards of same suit\n- Sets: 3-4 cards of same value');
+                    }
+                });
+            }
+        }
+
+        async function drawCard() {
+            if (!gameState.isMyTurn || gameState.mustDiscard) return;
+
+            try {
+                const gameCode = window.location.pathname.split('/').pop();
+                const urlParams = new URLSearchParams(window.location.search);
+                const role = urlParams.get('role');
+                const response = await fetch('/draw-card', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        gameCode: gameCode,
+                        isCreator: role === 'creator',
+                        fromDiscard: false
+                    }),
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    gameState.cards.push(data.card);
+                    updateGameDisplay();
+                } else {
+                    alert(data.error || 'Failed to draw card');
+                }
+            } catch (error) {
+                console.error('Error drawing card:', error);
+            }
+        }
+
+        async function drawFromDiscard() {
+            if (!gameState.isMyTurn || gameState.mustDiscard || !gameState.topDiscard) return;
+
+            try {
+                const gameCode = window.location.pathname.split('/').pop();
+                const urlParams = new URLSearchParams(window.location.search);
+                const role = urlParams.get('role');
+                const response = await fetch('/draw-card', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        gameCode: gameCode,
+                        isCreator: role === 'creator',
+                        fromDiscard: true
+                    }),
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    gameState.cards.push(data.card);
+                    updateGameDisplay();
+                } else {
+                    alert(data.error || 'Failed to draw card from discard pile');
+                }
+            } catch (error) {
+                console.error('Error drawing card from discard:', error);
+            }
+        }
+
+        async function discardCard(cardId) {
+            try {
+                const gameCode = window.location.pathname.split('/').pop();
+                const urlParams = new URLSearchParams(window.location.search);
+                const role = urlParams.get('role');
+                const response = await fetch('/discard-card', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        gameCode: gameCode,
+                        cardId: cardId,
+                        isCreator: role === 'creator'
+                    }),
+                });
+
+                const data = await response.json();
+                if (!data.success) {
+                    alert(data.error || 'Failed to discard card');
+                }
+            } catch (error) {
+                console.error('Error discarding card:', error);
+            }
+        }
+
+        async function checkWinner() {
+            const response = await fetch('/check-winner', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    gameCode: window.location.pathname.split('/').pop(),
+                    isCreator: new URLSearchParams(window.location.search).get('role') === 'creator'
+                })
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                const isCreator = new URLSearchParams(window.location.search).get('role') === 'creator';
+                const winner = data.winner === 'creator' ? 'Creator' : 'Joiner';
+                alert(`Game Over! ${winner} wins!`);
+                window.location.href = '/';
+            }
+        }
+
+        function initGame() {
+            const gameCode = window.location.pathname.split('/').pop();
+            const urlParams = new URLSearchParams(window.location.search);
+            const role = urlParams.get('role');
+            
+            if (!role || !['creator', 'joiner'].includes(role)) {
+                window.location.href = '/';
+                return;
+            }
+            
+            gameState.isCreator = role === 'creator';
+            
+            const gameCodeDisplay = document.getElementById('gameCodeDisplay');
+            if (gameCodeDisplay) {
+                gameCodeDisplay.textContent = gameCode;
+            }
+
+            window.statusCheckInterval = setInterval(checkGameStatus, 1000);
+            checkGameStatus();
+        }
+
+        // Start the game when the page is fully loaded
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initGame);
+        } else {
+            initGame();
+        }
+    </script>
+</body>
+</html>
