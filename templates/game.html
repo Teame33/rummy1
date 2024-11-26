@@ -297,12 +297,12 @@
         /* Responsive design for small screens */
         @media screen and (max-width: 768px) {
             .card {
-                width: 55px;     /* Slightly smaller width */
+                width: 55px;     /* Smaller width */
                 height: 77px;    /* Maintain aspect ratio */
                 padding: 2px;
                 margin: 1px;     /* Tighter spacing */
                 font-size: 0.75em; /* Slightly smaller text */
-                border-width: 1px; /* Thinner border for cleaner look */
+                border-width: 1px; /* Thinner border */
             }
 
             #playerHand {
@@ -315,33 +315,39 @@
                 padding: 3px;
                 max-width: 100%;
                 overflow-x: auto;
-                margin: 5px auto; /* Center the grid */
+                margin: 5px auto;
             }
 
             .card-value {
                 font-size: 1em;  /* Slightly larger for better readability */
-                font-weight: bold; /* Make values more visible */
+                font-weight: bold;
             }
 
             .card-suit {
-                font-size: 1.3em; /* Larger suits for better visibility */
+                font-size: 1.3em; /* Larger suits */
             }
 
             .card.selected {
-                transform: translateY(-3px); /* Smaller lift but still visible */
-                border-color: #4CAF50; /* More visible selection */
+                transform: translateY(-3px);
+                border-color: #4CAF50;
                 border-width: 2px;
             }
 
-            /* Ensure cards don't get too small on very small screens */
-            @media screen and (max-width: 375px) {
-                .card {
-                    width: 45px;
-                    height: 63px;
-                }
-                #playerHand {
-                    grid-template-columns: repeat(5, 1fr); /* 5 cards per row on very small screens */
-                }
+            .deck, .discard-pile {
+                width: 55px;
+                height: 77px;
+            }
+        }
+
+        /* Very small screens */
+        @media screen and (max-width: 375px) {
+            .card {
+                width: 45px;
+                height: 63px;
+            }
+
+            #playerHand {
+                grid-template-columns: repeat(5, 1fr); /* 5 cards per row */
             }
         }
     </style>
